@@ -1,151 +1,202 @@
 const express = require("express");
-const mongoose = require("mongoose");
-
 const router = express.Router();
-
 const Student = require("../models/Student");
-const authMiddleware = require("../middleware/authmiddleware");
 
+// =========================
 // CREATE STUDENT
+// =========================
+
 router.post("/", async (req, res) => {
-    try {
-        const { name } = req.body;
+  try {
+    const {
+      studentName,
+      rollNumber,
+      rollNo,
+      department,
+      branch,
+      semester,
+    } = req.body;
 
-        if (!name) {
-            return res.status(400).json({
-                success: false,
-                message: "Student name is required"
-            });
-        }
+    const finalRollNumber = rollNumber || rollNo;
+    const finalDepartment = department || branch;
 
-        const student = await Student.create({
-            name: name
-        });
-
-        res.status(201).json({
-            success: true,
-            message: "Student created successfully",
-            data: student
-        });
-
-    } catch (error) {
-        console.error("CREATE STUDENT ERROR:", error);
-
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+    if (
+      !studentName?.trim() ||
+      !finalRollNumber?.trim() ||
+      !finalDepartment?.trim() ||
+      !String(semester || "").trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All student fields are required",
+      });
     }
+
+    const existingStudent = await Student.findOne({
+      rollNumber: finalRollNumber.trim(),
+    });
+
+    if (existingStudent) {
+      return res.status(409).json({
+        success: false,
+        message: "Roll number already exists",
+      });
+    }
+
+    const student = await Student.create({
+      studentName: studentName.trim(),
+      rollNumber: finalRollNumber.trim(),
+      department: finalDepartment.trim(),
+      semester: String(semester).trim(),
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Student created successfully",
+      data: student,
+    });
+  } catch (error) {
+    console.error("CREATE STUDENT ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 });
 
+// =========================
 // GET ALL STUDENTS
+// =========================
+
 router.get("/", async (req, res) => {
-    try {
-        const students = await Student.find();
+  try {
+    const students = await Student.find().sort({
+      createdAt: -1,
+    });
 
-        res.status(200).json({
-            success: true,
-            data: students
-        });
+    return res.status(200).json({
+      success: true,
+      data: students,
+    });
+  } catch (error) {
+    console.error("GET STUDENTS ERROR:", error);
 
-    } catch (error) {
-        console.error("GET STUDENTS ERROR:", error);
-
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 });
 
-// GET STUDENT BY ID
-router.get("/:id", async (req, res) => {
-    try {
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid student ID"
-            });
-        }
-
-        const student = await Student.findById(req.params.id);
-
-        if (!student) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            data: student
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-});
-
+// =========================
 // UPDATE STUDENT
-router.put("/:id", authMiddleware, async (req, res) => {
-    try {
-        const student = await Student.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
-            }
-        );
+// =========================
 
-        if (!student) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found"
-            });
-        }
+router.put("/:id", async (req, res) => {
+  try {
+    const {
+      studentName,
+      rollNumber,
+      rollNo,
+      department,
+      branch,
+      semester,
+    } = req.body;
 
-        res.status(200).json({
-            success: true,
-            message: "Student updated successfully",
-            data: student
-        });
+    const finalRollNumber = rollNumber || rollNo;
+    const finalDepartment = department || branch;
 
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+    if (
+      !studentName?.trim() ||
+      !finalRollNumber?.trim() ||
+      !finalDepartment?.trim() ||
+      !String(semester || "").trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All student fields are required",
+      });
     }
+
+    const duplicateStudent = await Student.findOne({
+      rollNumber: finalRollNumber.trim(),
+      _id: { $ne: req.params.id },
+    });
+
+    if (duplicateStudent) {
+      return res.status(409).json({
+        success: false,
+        message: "Roll number already exists",
+      });
+    }
+
+    const updatedStudent =
+      await Student.findByIdAndUpdate(
+        req.params.id,
+        {
+          studentName: studentName.trim(),
+          rollNumber: finalRollNumber.trim(),
+          department: finalDepartment.trim(),
+          semester: String(semester).trim(),
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+    if (!updatedStudent) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Student updated successfully",
+      data: updatedStudent,
+    });
+  } catch (error) {
+    console.error("UPDATE STUDENT ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 });
 
+// =========================
 // DELETE STUDENT
+// =========================
+
 router.delete("/:id", async (req, res) => {
-    try {
-        const student = await Student.findByIdAndDelete(req.params.id);
+  try {
+    const deletedStudent =
+      await Student.findByIdAndDelete(req.params.id);
 
-        if (!student) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Student deleted successfully"
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+    if (!deletedStudent) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
     }
+
+    return res.status(200).json({
+      success: true,
+      message: "Student deleted successfully",
+      data: deletedStudent,
+    });
+  } catch (error) {
+    console.error("DELETE STUDENT ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 });
 
 module.exports = router;

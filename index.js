@@ -9,14 +9,18 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(authMiddleware);
 
 // Routes
+const authRoutes = require("./routes/authRoutes");
 const marksRoutes = require("./routes/marksRoutes");
 const studentsRoutes = require("./routes/studentsRoutes");
 const apiRoutes = require("./routes/api");
 
-// API routes
+// Public routes (login, register) - authMiddleware kante mundu
+app.use("/api/auth", authRoutes);
+
+// Protected routes
+app.use(authMiddleware);
 app.use("/api/marks", marksRoutes);
 app.use("/api/students", studentsRoutes);
 app.use("/api", apiRoutes);

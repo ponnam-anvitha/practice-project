@@ -3,20 +3,14 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-
   server: {
     host: "0.0.0.0",
-
-    allowedHosts: [
-      ".ws6.app"
-    ],
-
+    allowedHosts: true,
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "http://127.0.0.1:5000",
         changeOrigin: true,
-        secure: false
-      }
-    }
-  }
+      },
+    },
+  },
 });

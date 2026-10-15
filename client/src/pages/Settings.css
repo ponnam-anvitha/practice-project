@@ -1,0 +1,29 @@
+.simple-page {
+  min-height: 100vh;
+  padding: 40px;
+  background: #f1f5ff;
+  color: #14213d;
+  font-family: Arial, sans-serif;
+}
+
+.simple-page h1 {
+  margin-bottom: 10px;
+}
+
+.simple-card {
+  margin-top: 28px;
+  padding: 28px;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 8px 25px rgba(30, 50, 100, 0.08);
+}
+
+.simple-card button {
+  margin-top: 15px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 8px;
+  background: #4057ed;
+  color: white;
+  cursor: pointer;
+}
